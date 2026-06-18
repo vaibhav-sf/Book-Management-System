@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book Management System</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Book Management System</h1>
+    </header>
+    <div class="container">
+      <form>
+        <div class="form-group">
+          <label for="title">Book Title</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            placeholder="Ramayana"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="author">Book Author</label>
+          <input
+            type="text"
+            id="author"
+            name="author"
+            placeholder="Valmiki"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="ISBN">ISBN</label>
+          <input
+            type="text"
+            id="ISBN"
+            name="ISBN"
+            placeholder="848-123-2442"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="PublicationDate">Publication Date</label>
+          <input
+            type="date"
+            id="PublicationDate"
+            name="PublicationDate"
+            placeholder="2026-04-23"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="genre">Genre</label>
+          <select id="genre" name="genre" required>
+            <option value="">Select a Genre</option>
+            <option value="Religious">Religious</option>
+            <option value="Action">Action</option>
+            <option value="Adventure">Adventure</option>
+            <option value="Comedy">Comedy</option>
+            <option value="Historical">Historical</option>
+            <option value="Mystery">Mystery</option>
+            <option value="Romance">Romance</option>
+            <option value="Thriller">Thriller</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <button type="submit">Register Book</button>
+      </form>
+    </div>
+  </body>
+</html>
