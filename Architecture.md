@@ -42,7 +42,7 @@ This architecture provides:
 - Better scalability and maintainability
 - Secure communication between users and the system
 
-![Client-Server Architecture](image.png)
+![Client-Server Architecture](client_server.png)
 
 ---
 
@@ -73,4 +73,4 @@ Benefits of 3-Tier Architecture:
 - Easier maintenance
 - Independent development of each layer
 
-![3-Tier Architecture](image-1.png)
+![3-Tier Architecture](3-Tier.png)
