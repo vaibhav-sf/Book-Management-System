@@ -28,7 +28,7 @@ header h1{
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
-.form-group{
+.formGroup{
     margin-bottom: 15px;
 }
 
@@ -59,4 +59,27 @@ button{
 
 button:hover{
     background-color: #0056b3;
+}
+
+table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td{
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+}
+
+th{
+    background-color: #007BFF;
+    color: white;
+}
+
+td button{
+    width: auto;
+    padding: 5px 10px;
+    margin-right: 5px;
 }
