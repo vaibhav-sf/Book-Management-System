@@ -1,38 +1,23 @@
 const form = document.getElementById("bookForm");
 const tableBody = document.querySelector("#bookTable tbody");
-
+const submitBtn = form.querySelector("button[type='submit']");
 const books = [];
 let editIndex = -1;
+const genreMapping = {
+    Religious: "Spiritual",
+    Historical: "History",
+    Action: "Entertainment",
+    Adventure: "Adventure",
+    Comedy: "Comedy",
+    Mystery: "Mystery",
+    Romance: "Romance",
+    Thriller: "Thriller",
+    Other: "Other",
+};
+
 const getCategory = (genre) => {
-    if (genre === "Religious"){
-        return "Spiritual";
-    }
-    if (genre === "Historical"){
-        return "History";
-    }
-    if(genre === "Action"){
-        return "Entertainment";
-    }
-    if(genre === "Adventure"){
-        return "Adventure";
-    }
-    if(genre === "Comedy"){
-        return "Comedy";
-    }
-    if(genre === "Mystery"){
-        return "Mystery";
-    }
-    if(genre === "Romance"){
-        return "Romance";
-    }
-    if(genre === "Thriller"){
-        return "Thriller";
-    }
-    if(genre === "Other"){
-        return "Other";
-    }
-    return "General";
-}
+    return genreMapping[genre] ?? "General";
+};
 
 const renderBooks = () => {
     tableBody.innerHTML="";
@@ -110,6 +95,7 @@ form.addEventListener("submit", (e) => {
     }
     renderBooks();
     form.reset();
+    submitBtn.textContent = "Register Book";
 });
 
 const deleteBook = (index) => {
@@ -126,7 +112,7 @@ const editBook = (index) => {
     document.getElementById("genre").value = book.genre;
 
     editIndex = index;
-
+    submitBtn.textContent = "Update Book";
 };
 
 
