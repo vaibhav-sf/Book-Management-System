@@ -37,29 +37,25 @@ const renderBooks = () => {
     `;
     return;
   }
-  displayedBooks.forEach((book) => {
+  displayedBooks.forEach((book, index) => {
     const row = document.createElement("tr");
+    row.className =
+      "border-b border-slate-200 even:bg-slate-50 hover:bg-slate-50";
     row.innerHTML = `
-    <td>${book.title}</td>
-    <td>${book.author}</td>
-    <td>${book.isbn}</td>
-    <td>${book.publicationDate}</td>
-    <td>${book.genre}</td>
-    <td>${book.age}</td>
-    <td>${book.category}</td>
-    <td>
-    <button class="deleteBtn">Delete</button>
-    <button class="editBtn">Edit</button>
-    </td>
-    `;
-    const deleteBtn = row.querySelector(".deleteBtn");
-    deleteBtn.addEventListener("click", () => {
-      deleteBook(books.indexOf(book));
-    });
-    const editBtn = row.querySelector(".editBtn");
-    editBtn.addEventListener("click", () => {
-      editBook(books.indexOf(book));
-    });
+        <td class="p-4 border-r border-slate-200 text-left font-medium">${book.title}</td>
+        <td class="p-4 border-r border-slate-200">${book.author}</td>
+        <td class="p-4 border-r border-slate-200">${book.isbn}</td>
+        <td class="p-4 border-r border-slate-200">${book.publicationDate}</td>
+        <td class="p-4 border-r border-slate-200">${book.genre}</td>
+        <td class="p-4 border-r border-slate-200">${book.age}</td>
+        <td class="p-4 border-r border-slate-200"><span class="px-2.5 py-1 bg-slate-200 text-slate-800 rounded-full text-xs font-semibold">${book.category}</span></td>
+        <td class="p-4 ">
+            <div class="flex justify-center gap-2">
+                <button class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded transition-colors cursor-pointer" onClick="deleteBook(${books.indexOf(book)})">Delete</button>
+                <button class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded transition-colors cursor-pointer" onClick="editBook(${books.indexOf(book)})">Edit</button>
+            </div>
+        </td>
+        `;
     tableBody.appendChild(row);
   });
 };
@@ -231,24 +227,21 @@ document.getElementById("genreFilter").addEventListener("change", applyFilters);
 document.getElementById("sortBooks").addEventListener("change", applyFilters);
 
 const renderApiBook = (book) => {
-  document.getElementById("apiResultList").innerHTML = `
-    <div class="apiCard">
-        <div class="apiInfo">
-            <div class="apiId">
+    document.getElementById("apiResultList").innerHTML=`
+    <div class="flex justify-between items-center gap-4 p-3 border border-slate-200 rounded-xl bg-slate-50 transition-all duration-300 hover:translate-x-1 hover:shadow-md">
+        <div class="flex gap-4 items-center flex-[5] min-w-0">
+            <div class="w-9 h-9 min-w-[36px] rounded-full bg-blue-600 text-white flex justify-center items-center font-bold text-sm">
                 ${book.id}
             </div>
-            <div class="apiBookTitle">
+            <div class="flex-1 text-sm font-semibold whitespace-nowrap overflow-hidden text-ellipsis text-slate-800">
                 ${book.title}
             </div>
         </div>
-        <button id="addBtn${book.id}" class="addBtn">
+        <button id="addBtn${book.id}" class="w-[80px] min-w-[80px] h-9 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm cursor-pointer border-none transition-colors" onclick="addApiBook(${book.id})">
         + Add
         </button>
     </div>
-`;
-  document.getElementById(`addBtn${book.id}`).addEventListener("click", () => {
-    addApiBook(book.id);
-  });
+    `;
 };
 
 document.querySelectorAll("input, select").forEach((input) => {
@@ -266,7 +259,7 @@ const fetchSingleBook = async () => {
   const id = document.getElementById("apiBookSearch").value;
   if (id === "") {
     document.getElementById("apiResultList").innerHTML = `
-        <p class="text-red-500 text-center">
+        <p style="text-red-500 text-center">
         Please enter Book ID
         </p>
         `;
