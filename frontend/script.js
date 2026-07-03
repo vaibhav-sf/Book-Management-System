@@ -4,7 +4,6 @@ const submitBtn = form.querySelector("button[type='submit']");
 const books = [];
 let displayedBooks = [];
 let editIndex = -1;
-let apiCount = 0;
 
 const genreMapping = {
   Religious: "Spiritual",
@@ -154,22 +153,19 @@ form.addEventListener("submit", (e) => {
     return;
   }
 
-  const book = {
-    title,
-    author,
-    isbn,
-    publicationDate,
-    genre,
-    age,
-    category: "Manual Entry",
-    source: "Manual Entry",
-  };
   if (editIndex !== -1) {
-    books[editIndex] = book;
+    books[editIndex].title = title;
+    books[editIndex].author = author;
+    books[editIndex].isbn = isbn;
+    books[editIndex].publicationDate = publicationDate;
+    books[editIndex].genre = genre;
+    books[editIndex].age = age;
+
     editIndex = -1;
   } else {
     const exists = books.some(
-      (b) =>
+      (b, index) =>
+        index !== editIndex &&
         b.title.toLowerCase() === title.toLowerCase() &&
         b.author.toLowerCase() === author.toLowerCase(),
     );
@@ -178,6 +174,16 @@ form.addEventListener("submit", (e) => {
       showError("title", "titleError", "Book already exists");
       return;
     }
+    const book = {
+      title,
+      author,
+      isbn,
+      publicationDate,
+      genre,
+      age,
+      category: "Manual Entry",
+      source: "Manual Entry",
+    };
     books.push(book);
     console.log("Books:", books);
   }
@@ -302,7 +308,6 @@ const genres = [
   "Romance",
   "Thriller",
   "Religious",
-  "Other",
 ];
 
 function getRandomGenre() {
@@ -340,13 +345,15 @@ const addApiBook = async (id) => {
       throw new Error("Failed to add book. Please try again.");
     }
     const data = await response.json();
-    const alreadyExists = books.some((book) => book.title === data.title);
+    const alreadyExists = books.some(
+      (book) => book.title.toLowerCase() === data.title.toLowerCase(),
+    );
     if (alreadyExists) {
       document.getElementById("apiResultList").innerHTML = `
         <p style="color:red;text-align:center;">
             Book already exist.
         </p>`;
-    return;
+      return;
     }
 
     const isbn = String(Math.floor(1000000000 + Math.random() * 9000000000));
@@ -383,7 +390,6 @@ const addApiBook = async (id) => {
 function applyFilters() {
   let filtered = [...books];
 
-  // Search
   const keyword = document
     .getElementById("searchBook")
     .value.trim()
@@ -395,7 +401,6 @@ function applyFilters() {
     );
   }
 
-  // Genre
   const genre = document.getElementById("genreFilter").value;
 
   if (genre !== "") {
