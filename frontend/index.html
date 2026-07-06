@@ -10,17 +10,40 @@
     <header>
       <h1>Book Management System</h1>
     </header>
-    <div class="container">
+    <div class="dashboard">
+      <div class="card">
+        <h3 id="totalBooks">0</h3>
+        <p>📚 Books</p>
+      </div>
+      <div class="card">
+        <h3 id="totalAuthors">0</h3>
+        <p>✍️ Authors</p>
+      </div>
+      <div class="card">
+        <h3 id="totalGenres">0</h3>
+        <p>📖 Genres</p>
+      </div>
+      <div class="card">
+        <h3 id="apiBooks">0</h3>
+        <p>🌐 API Books</p>
+    </div>
+    </div>
+    <div class="mainSection">
+      <div class="container">
       <form id="bookForm">
         <div class="formGroup">
+          <h2 class="sectionTitle">
+            📘 Add New Book
+          </h2>
           <label for="title">Book Title</label>
           <input
             type="text"
             id="title"
             name="title"
             placeholder="ramayana"
-            required
+            
           />
+          <small class="error" id="titleError"></small>
         </div>
         <div class="formGroup">
           <label for="author">Book Author</label>
@@ -29,8 +52,9 @@
             id="author"
             name="author"
             placeholder="valmiki"
-            required
+            
           />
+          <small class="error" id="authorError"></small>
         </div>
         <div class="formGroup">
           <label for="isbn">ISBN</label>
@@ -38,9 +62,9 @@
             type="text"
             id="isbn"
             name="isbn"
-            placeholder="8481232442"
-            required
+            placeholder="8481232442"           
           />
+          <small class="error" id="isbnError"></small>
         </div>
         <div class="formGroup">
           <label for="publicationDate">Publication Date</label>
@@ -48,13 +72,13 @@
             type="date"
             id="publicationDate"
             name="publicationDate"
-            placeholder="2026-04-23"
-            required
+            placeholder="2026-04-23"           
           />
+          <small class="error" id="publicationDateError"></small>
         </div>
         <div class="formGroup">
           <label for="genre">Genre</label>
-          <select id="genre" name="genre" required>
+          <select id="genre" name="genre" >
             <option value="">Select a Genre</option>
             <option value="Religious">Religious</option>
             <option value="Action">Action</option>
@@ -64,30 +88,98 @@
             <option value="Mystery">Mystery</option>
             <option value="Romance">Romance</option>
             <option value="Thriller">Thriller</option>
-            <option value="Other">Other</option>
           </select>
+          <small class="error" id="genreError"></small>
         </div>
 
         <button type="submit">Register Book</button>
       </form>
     </div>
-    <h2>Book List</h2>
+      <div class="controlsCard">
+        <h3> Search & Filters</h3>
+        <div class="topControls">
+            <input
+                type="text"
+                id="searchBook"
+                placeholder=" Search Book by Title"
+            />
 
+            <button id="fetchBooksBtn">
+                Fetch Books
+            </button>
+        </div>
+        <div class="bottomControls">
+            <select id="genreFilter">
+                <option value="">All Genres</option>
+                <option value="Religious">Religious</option>
+                <option value="Action">Action</option>
+                <option value="Adventure">Adventure</option>
+                <option value="Comedy">Comedy</option>
+                <option value="Historical">Historical</option>
+                <option value="Mystery">Mystery</option>
+                <option value="Romance">Romance</option>
+                <option value="Thriller">Thriller</option>
+            </select>
+
+            <select id="sortBooks">
+                <option value="">Sort Books</option>
+                <option value="az">A-Z</option>
+                <option value="za">Z-A</option>
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+            </select>
+
+        </div>
+      <div class="apiResults">
+          
+      <h3>API Search Results</h3>        
+      <p class="apiText">
+        Search by Book ID to fetch book from API
+      </p>
+      
+      <div class="apiSearchRow">
+        <input
+          type="number"
+          id="apiBookSearch"
+          placeholder="Enter Book ID (1-100)"
+        >
+      
+        <button id="fetchApiBooks">
+          Search
+        </button>
+
+      </div>
+
+<div id="apiResultList">
+
+</div>
+
+</div>
+
+      </div>
+    </div>
+    
+  <div class="tableContainer">
+    <div class="tableTitle">
+        📚 Book List
+    </div>
     <table id="bookTable">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Author</th>
-          <th>ISBN</th>
-          <th>Publication Date</th>
-          <th>Genre</th>
-          <th>Age</th>
-          <th>Category</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>ISBN</th>
+            <th>Publication Date</th>
+            <th>Genre</th>
+            <th>Age</th>
+            <th>Category</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
     </table>
+  </div>
+
     <script src="script.js"></script>
   </body>
 </html>
