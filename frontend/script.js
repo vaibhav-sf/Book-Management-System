@@ -6,15 +6,14 @@ let displayedBooks = [];
 let editIndex = -1;
 
 const genreMapping = {
-  Religious: "Spiritual",
-  Historical: "History",
-  Action: "Entertainment",
+  Religious: "Religious",
+  Historical: "Historical",
+  Action: "Action",
   Adventure: "Adventure",
   Comedy: "Comedy",
   Mystery: "Mystery",
   Romance: "Romance",
   Thriller: "Thriller",
-  Other: "Other",
 };
 
 const getCategory = (genre) => {
@@ -51,11 +50,19 @@ const renderBooks = () => {
         <td class="p-4 border-r border-slate-200"><span class="px-2.5 py-1 bg-slate-200 text-slate-800 rounded-full text-xs font-semibold">${book.category}</span></td>
         <td class="p-4 ">
             <div class="flex justify-center gap-2">
-                <button class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded transition-colors cursor-pointer" onClick="deleteBook(${books.indexOf(book)})">Delete</button>
-                <button class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded transition-colors cursor-pointer" onClick="editBook(${books.indexOf(book)})">Edit</button>
+                <button class="deleteBtn px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded transition-colors cursor-pointer">Delete</button>
+                <button class="editBtn px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded transition-colors cursor-pointer">Edit</button>
             </div>
         </td>
         `;
+        const deleteBtn = row.querySelector(".deleteBtn");
+        deleteBtn.addEventListener("click", () => {
+          deleteBook(books.indexOf(book));
+        });
+        const editBtn = row.querySelector(".editBtn");
+        editBtn.addEventListener("click", () => {
+          editBook(books.indexOf(book));
+        })
     tableBody.appendChild(row);
   });
 };
@@ -77,16 +84,21 @@ const clearErrors = () => {
   });
 
   document.querySelectorAll("input, select").forEach((input) => {
-    input.classList.remove("inputError");
+    input.classList.remove("border-red-500", "ring-2", "ring-red-500");
   });
 };
 
 const showError = (inputId, errorId, message) => {
   document.getElementById(errorId).textContent = message;
-  document.getElementById(inputId).classList.add("inputError");
+  document.getElementById(inputId).classList.add("border-red-500", "ring-2", "ring-red-500");
+};
+const serverRequest = () => {
+    return new Promise((resolve) => {
+        setTimeout(resolve, 1000);
+    });
 };
 
-form.addEventListener("submit", (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const title = getValue("title");
   const author = getValue("author");
@@ -97,20 +109,20 @@ form.addEventListener("submit", (e) => {
   clearErrors();
   let valid = true;
 
-  if (title === "") {
+  if (!title) {
     showError("title", "titleError", "Title is required");
     valid = false;
   }
-  if (author === "") {
+  if (!author) {
     showError("author", "authorError", "Author is required");
     valid = false;
   }
-  if (isbn === "") {
+  if (!isbn) {
     showError("isbn", "isbnError", "ISBN is required");
     valid = false;
   }
 
-  if (publicationDate === "") {
+  if (!publicationDate) {
     showError(
       "publicationDate",
       "publicationDateError",
@@ -119,7 +131,7 @@ form.addEventListener("submit", (e) => {
     valid = false;
   }
 
-  if (genre === "") {
+  if (!genre) {
     showError("genre", "genreError", "Genre is required");
     valid = false;
   }
@@ -150,14 +162,34 @@ form.addEventListener("submit", (e) => {
   }
 
   if (editIndex !== -1) {
-    books[editIndex].title = title;
-    books[editIndex].author = author;
-    books[editIndex].isbn = isbn;
-    books[editIndex].publicationDate = publicationDate;
-    books[editIndex].genre = genre;
-    books[editIndex].age = age;
+    const exists = books.some((book, index) =>
+      index !== editIndex &&
+      book.title.toLowerCase() === title.toLowerCase() &&
+      book.author.toLowerCase() === author.toLowerCase()
+    );
 
-    editIndex = -1;
+    if (exists) {
+        showError("title", "titleError", "Book already exists");
+        return;
+    }
+    try{
+      await serverRequest();
+      books[editIndex] = 
+      {...books[editIndex], 
+        title,
+        author,
+        isbn,
+        publicationDate,
+        genre,
+        age,
+      };
+      editIndex = -1;
+    }
+    catch(error){
+      console.error("Error updating book:", error);
+    }
+    updateDashboard();
+    applyFilters();
   } else {
     const exists = books.some(
       (b, index) =>
@@ -170,28 +202,34 @@ form.addEventListener("submit", (e) => {
       showError("title", "titleError", "Book already exists");
       return;
     }
-    const book = {
-      title,
-      author,
-      isbn,
-      publicationDate,
-      genre,
-      age,
-      category: "Manual Entry",
-      source: "Manual Entry",
-    };
-    books.push(book);
-    console.log("Books:", books);
+    try{
+      await serverRequest();
+      const book = {
+        title,
+        author,
+        isbn,
+        publicationDate,
+        genre,
+        age,
+        category: "Manual Entry",
+        source: "Manual Entry",
+      };
+      books.push(book);
+      console.log("Books:", books);
+    }
+    catch(error){
+      console.error("Error adding book:", error);
+    }
+    updateDashboard();
+    applyFilters();
   }
-
-  updateDashboard();
-  applyFilters();
+    
   form.reset();
   submitBtn.textContent = "Register Book";
   clearErrors();
 });
 
-window.deleteBook = (index) => {
+const deleteBook = (index) => {
   if (confirm("Delete this book?")) {
     books.splice(index, 1);
     updateDashboard();
@@ -199,7 +237,7 @@ window.deleteBook = (index) => {
   }
 };
 
-window.editBook = (index) => {
+const editBook = (index) => {
   const book = books[index];
   document.getElementById("title").value = book.title;
   document.getElementById("author").value = book.author;
@@ -211,15 +249,6 @@ window.editBook = (index) => {
   submitBtn.textContent = "Update Book";
 };
 
-const serverRequest = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve("Data fetched successfully");
-    }, 2000);
-  });
-};
-serverRequest().then((result) => console.log(result));
-
 document
   .getElementById("fetchBooksBtn")
   .addEventListener("click", applyFilters);
@@ -230,23 +259,28 @@ const renderApiBook = (book) => {
     document.getElementById("apiResultList").innerHTML=`
     <div class="flex justify-between items-center gap-4 p-3 border border-slate-200 rounded-xl bg-slate-50 transition-all duration-300 hover:translate-x-1 hover:shadow-md">
         <div class="flex gap-4 items-center flex-[5] min-w-0">
-            <div class="w-9 h-9 min-w-[36px] rounded-full bg-blue-600 text-white flex justify-center items-center font-bold text-sm">
+            <div class="w-9 h-9 min-w-9 rounded-full bg-blue-600 text-white flex justify-center items-center font-bold text-sm">
                 ${book.id}
             </div>
             <div class="flex-1 text-sm font-semibold whitespace-nowrap overflow-hidden text-ellipsis text-slate-800">
                 ${book.title}
             </div>
-        </div>
-        <button id="addBtn${book.id}" class="w-[80px] min-w-[80px] h-9 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm cursor-pointer border-none transition-colors" onclick="addApiBook(${book.id})">
+        </div>                                                                                                                                                
+        <button id="addBtn${book.id}" class="w-20 min-w-20 h-9 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold text-sm cursor-pointer border-none transition-colors">
         + Add
         </button>
     </div>
     `;
+    document
+    .getElementById(`addBtn${book.id}`)
+    .addEventListener("click", () => {
+        addApiBook(book.id);
+    });
 };
 
 document.querySelectorAll("input, select").forEach((input) => {
   input.addEventListener("input", () => {
-    input.classList.remove("inputError");
+    input.classList.remove("border-red-500", "ring-2", "ring-red-500");
     const errorId = input.id + "Error";
     const error = document.getElementById(errorId);
     if (error) {
@@ -259,14 +293,14 @@ const fetchSingleBook = async () => {
   const id = document.getElementById("apiBookSearch").value;
   if (id === "") {
     document.getElementById("apiResultList").innerHTML = `
-        <p style="text-red-500 text-center">
+        <p class="text-red-500 text-center">
         Please enter Book ID
         </p>
         `;
     return;
   }
   document.getElementById("apiResultList").innerHTML = `
-        <p style="text-align:center;padding:20px;">
+        <p class="text-red-500 text-center p-5">
             Loading book...
         </p>
     `;
@@ -282,7 +316,7 @@ const fetchSingleBook = async () => {
     renderApiBook(data);
   } catch (error) {
     document.getElementById("apiResultList").innerHTML = `
-        <p style="color:red;text-align:center;">
+        <p class="text-red-500 text-center">
             Failed to load book.
         </p>
     `;
@@ -292,16 +326,8 @@ const fetchSingleBook = async () => {
 document
   .getElementById("fetchApiBooks")
   .addEventListener("click", fetchSingleBook);
-const genres = [
-  "Action",
-  "Adventure",
-  "Comedy",
-  "Historical",
-  "Mystery",
-  "Romance",
-  "Thriller",
-  "Religious",
-];
+const genres = Object.values(genreMapping);
+
 
 function getRandomGenre() {
   return genres[Math.floor(Math.random() * genres.length)];
@@ -323,7 +349,7 @@ function getRandomAuthor() {
 }
 
 function getRandomDate() {
-  const year = 2015 + Math.floor(Math.random() * 11);
+  const year = new Date().getFullYear() - Math.floor(Math.random() * 11);
   const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, "0");
   const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, "0");
   return `${year}-${month}-${day}`;
@@ -343,7 +369,7 @@ const addApiBook = async (id) => {
     );
     if (alreadyExists) {
       document.getElementById("apiResultList").innerHTML = `
-        <p style="color:red;text-align:center;">
+        <p class="text-red-500 text-center">
             Book already exist.
         </p>`;
       return;
@@ -373,7 +399,7 @@ const addApiBook = async (id) => {
   } catch (error) {
     console.error(error);
     document.getElementById("apiResultList").innerHTML = `
-        <p style="color:red;text-align:center;">
+        <p class="text-red-500 text-center">
             Failed to add book. Please try again.
         </p>
     `;
