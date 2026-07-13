@@ -1,9 +1,44 @@
 const form = document.getElementById("bookForm");
 const tableBody = document.querySelector("#bookTable tbody");
 const submitBtn = form.querySelector("button[type='submit']");
-const books = [];
-let displayedBooks = [];
-let editIndex = -1;
+class BaseBook{
+  constructor(title, author, isbn, publicationDate, genre, source){
+    this.title = title;
+    this.author = author;
+    this.isbn = isbn;
+    this.publicationDate = publicationDate;
+    this.genre = genre;
+    this.source = source;
+  }
+
+  getBookAge(){
+      const age = new Date().getFullYear() - new Date(this.publicationDate).getFullYear();
+      return age;
+    }
+  getCategory(){
+      return this.source;
+    } 
+}
+class PrintedBook extends BaseBook{
+  constructor(title, author, isbn, publicationDate, genre){
+    super(title, author, isbn, publicationDate, genre, "Manual Entry");
+    this.price = (Math.floor(Math.random() * 10) +1) * 100;
+  }
+
+
+  getDiscountPrice(){
+    return this.price * 0.9;
+  }
+}
+class EBook extends BaseBook{
+  constructor(title, author, isbn, publicationDate, genre){
+    super(title, author, isbn, publicationDate, genre, "API");
+    this.price = (Math.floor(Math.random() * 10) +1) * 100;
+  }
+  getDiscountPrice(){
+    return this.price * 0.8;
+  }
+}
 
 const genreMapping = {
   Religious: "Religious",
@@ -16,68 +51,164 @@ const genreMapping = {
   Thriller: "Thriller",
 };
 
-const getCategory = (genre) => {
-  return genreMapping[genre] ?? "General";
-};
 
-const getValue = (id) => {
-  return document.getElementById(id).value.trim();
-};
-
-const renderBooks = () => {
-  tableBody.innerHTML = "";
-  if (displayedBooks.length === 0) {
-    tableBody.innerHTML = `
-    <tr>
-        <td colspan="8">
-            📚 No books available
-        </td>
-    </tr>
-    `;
-    return;
+class BookManager {
+  constructor() {
+    this.books = [];
+    this.displayedBooks = [];
+    this.editIndex = -1;
   }
-  displayedBooks.forEach((book, index) => {
-    const row = document.createElement("tr");
-    row.className =
-      "border-b border-slate-200 even:bg-slate-50 hover:bg-slate-50";
-    row.innerHTML = `
+  updateDashboard(){
+  document.getElementById("totalBooks").textContent = this.books.length;
+  const authors = [...new Set(this.books.map((book) => book.author))];
+
+  document.getElementById("totalAuthors").textContent = authors.length;
+  const genres = [...new Set(this.books.map((book) => book.genre))];
+
+  document.getElementById("totalGenres").textContent = genres.length;
+  const apiBooks = this.books.filter((book) => book.source === "API");
+  document.getElementById("apiBooks").textContent = apiBooks.length;
+};
+  renderBooks() {
+    tableBody.innerHTML = "";
+
+    if (this.displayedBooks.length === 0) {
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="9" class="p-8 text-center text-slate-500 py-12">
+            📚 No books available
+          </td>
+        </tr>`;
+      return;
+    }
+
+    this.displayedBooks.forEach((book) => {
+      const discountPrice = book.getDiscountPrice();
+      const row = document.createElement("tr");
+      row.className = "border-b border-slate-200 even:bg-slate-50 hover:bg-slate-50";
+
+      row.innerHTML = `
         <td class="p-4 border-r border-slate-200 text-left font-medium">${book.title}</td>
         <td class="p-4 border-r border-slate-200">${book.author}</td>
         <td class="p-4 border-r border-slate-200">${book.isbn}</td>
         <td class="p-4 border-r border-slate-200">${book.publicationDate}</td>
         <td class="p-4 border-r border-slate-200">${book.genre}</td>
-        <td class="p-4 border-r border-slate-200">${book.age}</td>
-        <td class="p-4 border-r border-slate-200"><span class="px-2.5 py-1 bg-slate-200 text-slate-800 rounded-full text-xs font-semibold">${book.category}</span></td>
-        <td class="p-4 ">
-            <div class="flex justify-center gap-2">
-                <button class="deleteBtn px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded transition-colors cursor-pointer">Delete</button>
-                <button class="editBtn px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded transition-colors cursor-pointer">Edit</button>
-            </div>
+        <td class="p-4 border-r border-slate-200">${book.getBookAge()} years</td>
+        <td class="p-4 border-r border-slate-200">
+          <span class="px-2.5 py-1 bg-slate-200 text-slate-800 rounded-full text-xs font-semibold">
+            ${book.getCategory()}
+          </span>
         </td>
-        `;
-        const deleteBtn = row.querySelector(".deleteBtn");
-        deleteBtn.addEventListener("click", () => {
-          deleteBook(books.indexOf(book));
-        });
-        const editBtn = row.querySelector(".editBtn");
-        editBtn.addEventListener("click", () => {
-          editBook(books.indexOf(book));
-        })
-    tableBody.appendChild(row);
-  });
+        <td class="p-4 border-r border-slate-200 font-bold text-emerald-600">
+          ₹${Number(discountPrice).toFixed(0)}
+        </td>
+        <td class="p-4">
+          <div class="flex justify-center gap-2">
+            <button class="deleteBtn px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded transition-colors cursor-pointer">Delete</button>
+            <button class="editBtn px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded transition-colors cursor-pointer">Edit</button>
+          </div>
+        </td>
+      `;
+
+      row.querySelector(".deleteBtn").addEventListener("click", () => {
+        this.deleteBook(this.books.indexOf(book));
+      });
+
+      row.querySelector(".editBtn").addEventListener("click", () => {
+        this.editBook(this.books.indexOf(book));
+      });
+
+      tableBody.appendChild(row);
+    });
+  }
+
+ deleteBook(index){
+  if (confirm("Delete this book?")) {
+    this.books.splice(index, 1);
+    this.updateDashboard();
+    this.applyFilters();
+  }
+};
+ editBook(index){
+  const book = this.books[index];
+  document.getElementById("title").value = book.title;
+  document.getElementById("author").value = book.author;
+  document.getElementById("isbn").value = book.isbn;
+  document.getElementById("publicationDate").value = book.publicationDate;
+  document.getElementById("genre").value = book.genre;
+
+  this.editIndex = index;
+  submitBtn.textContent = "Update Book";
+};
+  applyFilters() {
+  let filtered = [...this.books];
+
+  const keyword = document
+    .getElementById("searchBook")
+    .value.trim()
+    .toLowerCase();
+
+  if (keyword !== "") {
+    filtered = filtered.filter((book) =>
+      book.title.toLowerCase().includes(keyword),
+    );
+  }
+
+  const genre = document.getElementById("genreFilter").value;
+
+  if (genre !== "") {
+    filtered = filtered.filter((book) => book.genre === genre);
+  }
+
+  const sort = document.getElementById("sortBooks").value;
+
+  switch (sort) {
+    case "az":
+      filtered.sort((a, b) => a.title.localeCompare(b.title));
+      break;
+
+    case "za":
+      filtered.sort((a, b) => b.title.localeCompare(a.title));
+      break;
+
+    case "newest":
+      filtered.sort(
+        (a, b) => new Date(b.publicationDate) - new Date(a.publicationDate),
+      );
+      break;
+
+    case "oldest":
+      filtered.sort(
+        (a, b) => new Date(a.publicationDate) - new Date(b.publicationDate),
+      );
+      break;
+  }
+  this.displayedBooks = filtered;
+  this.renderBooks();
+}
+ addBook(book){
+  this.books.push(book);
+  this.updateDashboard();
+  this.applyFilters();
+ }
+ updateBook(index, updatedBook){
+  this.books[index] = updatedBook;
+  this.updateDashboard();
+  this.applyFilters();
+ }
+ findBook(title, author, ignoreIndex = -1){
+  return this.books.some((book, index) =>
+  index !== ignoreIndex && book.title.toLowerCase() === title.toLowerCase() 
+  && book.author.toLowerCase() === author.toLowerCase()
+  );
+ }
+}
+const manager = new BookManager();
+manager.applyFilters();
+const getValue = (id) => {
+  return document.getElementById(id).value.trim();
 };
 
-const updateDashboard = () => {
-  document.getElementById("totalBooks").textContent = books.length;
-  const authors = [...new Set(books.map((book) => book.author))];
-
-  document.getElementById("totalAuthors").textContent = authors.length;
-  const genres = [...new Set(books.map((book) => book.genre))];
-
-  document.getElementById("totalGenres").textContent = genres.length;
-  const apiBooks = books.filter((book) => book.source === "API");
-  document.getElementById("apiBooks").textContent = apiBooks.length;
-};
 const clearErrors = () => {
   document.querySelectorAll(".error").forEach((error) => {
     error.textContent = "";
@@ -86,6 +217,14 @@ const clearErrors = () => {
   document.querySelectorAll("input, select").forEach((input) => {
     input.classList.remove("border-red-500", "ring-2", "ring-red-500");
   });
+};
+
+const showSuccess = (message) => {
+  const toast = document.createElement("div");
+  toast.className = "fixed bottom-5 right-5 bg-green-600 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 z-50";
+  toast.innerHTML = `✅ ${message}`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2800);
 };
 
 const showError = (inputId, errorId, message) => {
@@ -148,10 +287,8 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  const currentYear = new Date().getFullYear();
-  const publicationYear = new Date(publicationDate).getFullYear();
-  const age = currentYear - publicationYear;
-
+  const age = new Date().getFullYear() - new Date(publicationDate).getFullYear();
+  
   if (age < 0) {
     showError(
       "publicationDate",
@@ -161,67 +298,60 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  if (editIndex !== -1) {
-    const exists = books.some((book, index) =>
-      index !== editIndex &&
-      book.title.toLowerCase() === title.toLowerCase() &&
-      book.author.toLowerCase() === author.toLowerCase()
-    );
-
-    if (exists) {
-        showError("title", "titleError", "Book already exists");
-        return;
-    }
-    try{
-      await serverRequest();
-      books[editIndex] = 
-      {...books[editIndex], 
-        title,
-        author,
-        isbn,
-        publicationDate,
-        genre,
-        age,
-      };
-      editIndex = -1;
-    }
-    catch(error){
-      console.error("Error updating book:", error);
-    }
-    updateDashboard();
-    applyFilters();
-  } else {
-    const exists = books.some(
-      (b, index) =>
-        index !== editIndex &&
-        b.title.toLowerCase() === title.toLowerCase() &&
-        b.author.toLowerCase() === author.toLowerCase(),
-    );
-
-    if (exists) {
+  if (manager.editIndex !== -1) {
+    if(manager.findBook(title, author, manager.editIndex)){
       showError("title", "titleError", "Book already exists");
       return;
     }
     try{
       await serverRequest();
-      const book = {
+      const existingBook = manager.books[manager.editIndex];
+
+      const updatedBook =
+      existingBook instanceof EBook
+    ? new EBook(
+        title,
+        author,
+        isbn,
+        publicationDate,
+        genre
+      )
+    : new PrintedBook(
+        title,
+        author,
+        isbn,
+        publicationDate,
+        genre
+      );
+      manager.updateBook(manager.editIndex, updatedBook);
+      showSuccess("Book updated successfully!");
+      manager.editIndex = -1;
+    }
+    catch(error){
+      console.error("Error updating book:", error);
+    }
+    
+  } else {
+    if (manager.findBook(title, author, manager.editIndex)){
+        showError("title", "titleError", "Book already exists");
+        return;
+    }
+    try{
+      await serverRequest();
+      const book = new PrintedBook(
         title,
         author,
         isbn,
         publicationDate,
         genre,
-        age,
-        category: "Manual Entry",
-        source: "Manual Entry",
-      };
-      books.push(book);
-      console.log("Books:", books);
+      );
+      manager.addBook(book);
+      showSuccess("Book added successfully!");
+      console.log("Books:", manager.books);
     }
     catch(error){
       console.error("Error adding book:", error);
     }
-    updateDashboard();
-    applyFilters();
   }
     
   form.reset();
@@ -229,31 +359,10 @@ form.addEventListener("submit", async (e) => {
   clearErrors();
 });
 
-const deleteBook = (index) => {
-  if (confirm("Delete this book?")) {
-    books.splice(index, 1);
-    updateDashboard();
-    applyFilters();
-  }
-};
-
-const editBook = (index) => {
-  const book = books[index];
-  document.getElementById("title").value = book.title;
-  document.getElementById("author").value = book.author;
-  document.getElementById("isbn").value = book.isbn;
-  document.getElementById("publicationDate").value = book.publicationDate;
-  document.getElementById("genre").value = book.genre;
-
-  editIndex = index;
-  submitBtn.textContent = "Update Book";
-};
-
-document
-  .getElementById("fetchBooksBtn")
-  .addEventListener("click", applyFilters);
-document.getElementById("genreFilter").addEventListener("change", applyFilters);
-document.getElementById("sortBooks").addEventListener("change", applyFilters);
+document.getElementById("fetchBooksBtn").addEventListener("click", () => manager.applyFilters());
+document.getElementById("genreFilter").addEventListener("change", () =>  manager.applyFilters());
+document.getElementById("sortBooks").addEventListener("change",  () => manager.applyFilters());
+document.getElementById("searchBook").addEventListener("input", () => {manager.applyFilters();});
 
 const renderApiBook = (book) => {
     document.getElementById("apiResultList").innerHTML=`
@@ -364,7 +473,7 @@ const addApiBook = async (id) => {
       throw new Error("Failed to add book. Please try again.");
     }
     const data = await response.json();
-    const alreadyExists = books.some(
+    const alreadyExists = manager.books.some(
       (book) => book.title.toLowerCase() === data.title.toLowerCase(),
     );
     if (alreadyExists) {
@@ -378,22 +487,14 @@ const addApiBook = async (id) => {
     const isbn = String(Math.floor(1000000000 + Math.random() * 9000000000));
     const randomGenre = getRandomGenre();
     const publicationDate = getRandomDate();
-    const age =
-      new Date().getFullYear() - new Date(publicationDate).getFullYear();
-
-    books.push({
-      title: data.title,
-      author: getRandomAuthor(),
-      isbn: isbn,
-      publicationDate: publicationDate,
-      genre: randomGenre,
-      age: age,
-      category: "API",
-      source: "API",
-    });
-
-    updateDashboard();
-    applyFilters();
+    const apiBook = new EBook(
+        data.title,
+        getRandomAuthor(),
+        isbn,
+        publicationDate,
+        randomGenre
+      );
+    manager.addBook(apiBook);
     document.getElementById("apiResultList").innerHTML = "";
     document.getElementById("apiBookSearch").value = "";
   } catch (error) {
@@ -405,50 +506,3 @@ const addApiBook = async (id) => {
     `;
   }
 };
-
-function applyFilters() {
-  let filtered = [...books];
-
-  const keyword = document
-    .getElementById("searchBook")
-    .value.trim()
-    .toLowerCase();
-
-  if (keyword !== "") {
-    filtered = filtered.filter((book) =>
-      book.title.toLowerCase().includes(keyword),
-    );
-  }
-
-  const genre = document.getElementById("genreFilter").value;
-
-  if (genre !== "") {
-    filtered = filtered.filter((book) => book.genre === genre);
-  }
-
-  const sort = document.getElementById("sortBooks").value;
-
-  switch (sort) {
-    case "az":
-      filtered.sort((a, b) => a.title.localeCompare(b.title));
-      break;
-
-    case "za":
-      filtered.sort((a, b) => b.title.localeCompare(a.title));
-      break;
-
-    case "newest":
-      filtered.sort(
-        (a, b) => new Date(b.publicationDate) - new Date(a.publicationDate),
-      );
-      break;
-
-    case "oldest":
-      filtered.sort(
-        (a, b) => new Date(a.publicationDate) - new Date(b.publicationDate),
-      );
-      break;
-  }
-  displayedBooks = filtered;
-  renderBooks();
-}
