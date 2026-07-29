@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "A simple web-based application for managing book records.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

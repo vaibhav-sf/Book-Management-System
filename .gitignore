@@ -3,10 +3,12 @@ node_modules/
 
 # Build output
 frontend/dist/
-
 # Logs
 *.log
 
 # OS files
 .DS_Store
 Thumbs.db
+
+# DOCUMENT
+DOCUMENTATION.md

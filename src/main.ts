@@ -1,11 +1,24 @@
 import { BookManager } from "./managers/BookManager.js";
-import { PrintedBook } from "./models/PrintedBook.js";
-import { EBook } from "./models/EBook.js";
+import { BookFactory } from "./factories/BookFactory.js";
 import { ApiService } from "./services/ApiService.js";
 import { DOMHelper } from "./utils/DOMHelper.js";
 import { GENRES, ApiPost } from "./types/BookTypes.js";
+import { BookValidator } from "./validators/BookValidator.js";
+import { Repository } from "./generics/Repository.js";
+import { BaseBook } from "./models/BaseBook.js";
+import { BookRenderer } from "./renderers/BookRenderer.js";
+import { FilterService } from "./services/FilterService.js";
 
-const manager = new BookManager();
+const repository = new Repository<BaseBook>();
+const renderer = new BookRenderer();
+const filterService = new FilterService();
+const validator = new BookValidator();
+const manager = new BookManager(
+  repository,
+  renderer,
+  filterService,
+  validator
+);
 manager.applyFilters();
 
 const serverRequest = (): Promise<void> => {
@@ -19,7 +32,8 @@ if (form) {
   const submitBtn = form.querySelector("button[type='submit']") as HTMLButtonElement;
 
   form.addEventListener("submit", async (e: Event) => {
-    e.preventDefault(); // This stops the page reload
+    e.preventDefault();
+
     const title = DOMHelper.getValue("title");
     const author = DOMHelper.getValue("author");
     const isbn = DOMHelper.getValue("isbn");
@@ -27,57 +41,58 @@ if (form) {
     const genre = DOMHelper.getValue("genre");
 
     DOMHelper.clearErrors();
-    let valid = true;
-    const FIELDS = [["title", "Title"], ["author", "Author"], ["isbn", "ISBN"],
-    ["publicationDate", "Publication Date"], ["genre", "Genre"]] as const;
 
-    for (const [id, label] of FIELDS) {
-      if (!DOMHelper.getValue(id)) { DOMHelper.showError(id, `${label} is required`); valid = false; }
-    }
-    if (!valid) return;
+    const errors = BookValidator.validate(title, author, isbn, publicationDate, genre);
 
-    if (isNaN(Number(isbn))) {
-      DOMHelper.showError("isbn", "ISBN must be a number");
-      return;
-    }
-    if (isbn.length !== 10) {
-      DOMHelper.showError("isbn", "ISBN must be 10 digits long");
+    if (Object.keys(errors).length > 0) {
+      if (errors.title) DOMHelper.showError("title", errors.title);
+      if (errors.author) DOMHelper.showError("author", errors.author);
+      if (errors.isbn) DOMHelper.showError("isbn", errors.isbn);
+      if (errors.publicationDate) DOMHelper.showError("publicationDate", errors.publicationDate);
+      if (errors.genre) DOMHelper.showError("genre", errors.genre);
       return;
     }
 
-    const age = new Date().getFullYear() - new Date(publicationDate).getFullYear();
-    if (age < 0) {
-      DOMHelper.showError("publicationDate", "Publication Date cannot be in the future");
-      return;
-    }
-
-    if (manager.findBook(title, author, manager.getEditIndex())) {
-      DOMHelper.showError("title", "Book already exists");
-      return;
-    }
-
-    if (manager.bookExists(isbn, manager.getEditIndex())) {
-      DOMHelper.showError("isbn", "Book with this ISBN already exists");
-      return;
-    }
-    try {
-      await serverRequest();
-
-      if (manager.isEditing()) {
-        const existingBook = manager.getBook(manager.getEditIndex());
-        const Model = existingBook instanceof EBook ? EBook : PrintedBook;
-        const book = new Model(title, author, isbn, publicationDate, genre, existingBook?.price ?? null);
-
-        manager.updateBook(manager.getEditIndex(), book);
-        manager.clearEditIndex();
-        DOMHelper.showSuccess("Book updated successfully!");
-      } else {
-        const book = new PrintedBook(title, author, isbn, publicationDate, genre);
-        manager.addBook(book);
-        DOMHelper.showSuccess("Book added successfully!");
+    if (manager.isEditing()) {
+      if (manager.findBook(title, author, manager.getEditIndex())) {
+        DOMHelper.showError("title", "Book already exists");
+        return;
       }
-    } catch (error) {
-      DOMHelper.showToastError("Error processing book: " + error);
+      try {
+        await serverRequest();
+        const existingBook = manager.getBook(manager.getEditIndex());
+        const isEBook = existingBook.getSource() === "API";
+        const updatedBook = isEBook
+          ? BookFactory.createApiBook(title, author, isbn, publicationDate, genre, existingBook.price)
+          : BookFactory.createManualBook(title, author, isbn, publicationDate, genre, existingBook.price);
+
+        manager.updateBook(manager.getEditIndex(), updatedBook);
+        DOMHelper.showSuccess("Book updated successfully!");
+        manager.clearEditIndex();
+      } catch (error) {
+        console.error("Error updating book:", error);
+      }
+    } else {
+      if (manager.findBook(title, author, manager.getEditIndex())) {
+        DOMHelper.showError("title", "Book already exists");
+        return;
+      }
+      if (manager.bookExists(isbn)) {
+        DOMHelper.showError("isbn", "Book already exists");
+        return;
+      }
+      try {
+        await serverRequest();
+        const book = BookFactory.createManualBook(title, author, isbn, publicationDate, genre);
+        const added = manager.addBook(book);
+        if (!added) {
+          DOMHelper.showError("isbn", "Book already exists");
+          return;
+        }
+        DOMHelper.showSuccess("Book added successfully!");
+      } catch (error) {
+        DOMHelper.showToastError("Failed to save book. Please try again.");
+      }
     }
 
     form.reset();
@@ -85,6 +100,7 @@ if (form) {
     DOMHelper.clearErrors();
   });
 }
+
 
 document.getElementById("fetchBooksBtn")?.addEventListener("click", () =>
   manager.applyFilters());
@@ -219,7 +235,7 @@ const addApiBook = async (id: number): Promise<void> => {
     const isbn = String(Math.floor(1000000000 + Math.random() * 9000000000));
     const randomGenre = getRandomGenre();
     const publicationDate = getRandomDate();
-    const apiBook = new EBook(
+    const apiBook = BookFactory.createApiBook(
       data.title,
       getRandomAuthor(),
       isbn,
