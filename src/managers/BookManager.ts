@@ -2,6 +2,7 @@ import { IBook } from "../interfaces/IBook.js";
 import { Repository } from "../generics/Repository.js";
 import { LogExecution } from "../decorators/Logger.js";
 import { DashboardRenderer } from "../utils/DashboardRenderer.js";
+import { ISearchFilter } from "../interfaces/ISearchFilter.js"
 
 export class BookManager {
   private repository = new Repository<IBook>();
@@ -11,11 +12,15 @@ export class BookManager {
   updateDashboard(): void {
     DashboardRenderer.update(this.repository.getAll());
   }
+  private refresh(): void {
+    this.updateDashboard();
+    this.applyFilters();
+  }
 
   renderBooks(): void {
     const tableBody = document.querySelector("#bookTable tbody") as HTMLTableSectionElement;
     if (!tableBody) return;
-    
+
     tableBody.replaceChildren();
     const booksToDisplay = this.displayedBooks;
 
@@ -47,7 +52,7 @@ export class BookManager {
       appendCell(book.publicationDate);
       appendCell(book.genre);
       appendCell(book.getBookAge().toString());
-      appendCell(book.getCategory());
+      appendCell(book.getSource());
       appendCell(`₹${book.getDiscountPrice().toFixed(0)}`, "p-4 border-r border-slate-200 font-bold text-emerald-600");
 
       const actionCell = document.createElement("td");
@@ -58,7 +63,7 @@ export class BookManager {
       const deleteBtn = document.createElement("button");
       deleteBtn.textContent = "Delete";
       deleteBtn.className = "px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded transition-colors duration-200 cursor-pointer";
-      
+
       const editBtn = document.createElement("button");
       editBtn.textContent = "Edit";
       editBtn.className = "px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded transition-colors duration-200 cursor-pointer";
@@ -85,9 +90,10 @@ export class BookManager {
 
   deleteBook(index: number): void {
     if (confirm("Delete this book?")) {
-      this.repository.remove(index);
-      this.updateDashboard();
-      this.applyFilters();
+      const book = this.repository.get(index);
+      if (book) this.repository.remove(book);
+      this.clearEditIndex();
+      this.refresh();
     }
   }
 
@@ -105,29 +111,20 @@ export class BookManager {
   }
 
   @LogExecution
-  applyFilters(): void {
+  applyFilters(filter?: ISearchFilter): void {
     let filtered = this.repository.getAll();
-
-    const searchInput = document.getElementById("searchBook") as HTMLInputElement;
-    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    const keyword = filter?.keyword.toLowerCase() ?? (document.getElementById("searchBook") as HTMLInputElement)?.value.trim().toLowerCase() ?? "";
+    const genre = filter?.genre ?? (document.getElementById("genreFilter") as HTMLSelectElement)?.value ?? "";
+    const sort = filter?.sort ?? (document.getElementById("sortBooks") as HTMLSelectElement)?.value ?? "";
 
     if (keyword !== "") {
-      filtered = filtered.filter((book) =>
-        book.title.toLowerCase().includes(keyword),
-      );
+      filtered = filtered.filter((book) => book.title.toLowerCase().includes(keyword));
     }
-
-    const genreFilter = document.getElementById("genreFilter") as HTMLSelectElement;
-    const genre = genreFilter ? genreFilter.value : "";
-
     if (genre !== "") {
       filtered = filtered.filter((book) => book.genre === genre);
     }
 
-    const sortBooks = document.getElementById("sortBooks") as HTMLSelectElement;
-    const sort = sortBooks ? sortBooks.value : "";
-
-    switch (sort) {
+    switch(sort) {
       case "az":
         filtered.sort((a, b) => a.title.localeCompare(b.title));
         break;
@@ -147,14 +144,13 @@ export class BookManager {
 
   addBook(book: IBook): void {
     this.repository.add(book);
-    this.updateDashboard();
-    this.applyFilters();
+    this.refresh();
   }
 
   updateBook(index: number, updatedBook: IBook): void {
-    this.repository.update(index, updatedBook);
-    this.updateDashboard();
-    this.applyFilters();
+    const oldBook = this.repository.get(index);
+    if (oldBook) this.repository.update(oldBook, updatedBook);
+    this.refresh();
   }
 
   findBook(title: string, author: string, ignoreIndex: number = -1): boolean {
@@ -165,7 +161,13 @@ export class BookManager {
     );
   }
 
-  bookExists(title: string): boolean {
+  bookExists(isbn: string, ignoreIndex: number = -1): boolean {
+    return this.repository.getAll().some(
+      (book, index) => index !== ignoreIndex && book.isbn === isbn
+    );
+  }
+
+  bookExistsByTitle(title: string): boolean {
     return this.repository.getAll().some(
       (book) => book.title.toLowerCase() === title.toLowerCase()
     );

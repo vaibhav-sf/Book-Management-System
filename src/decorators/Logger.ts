@@ -1,4 +1,4 @@
-export function LogExecution(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function LogExecution(_target: any, propertyKey: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
   descriptor.value = function (...args: any[]) {
     console.log(`[LOG] Executing method '${propertyKey}' with arguments:`, args);

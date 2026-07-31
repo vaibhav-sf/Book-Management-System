@@ -7,6 +7,6 @@ export interface IBook {
   source: string;
   price: number;
   getBookAge(): number;
-  getCategory(): string;
+  getSource(): string;
   getDiscountPrice(): number;
 }

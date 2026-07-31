@@ -1,16 +1,18 @@
-export class Repository<T> {
+import { IRepository } from "../interfaces/IRepository.js";
+export class Repository<T> implements IRepository<T> {
   private items: T[] = [];
 
   add(item: T): void {
     this.items.push(item);
   }
 
-  remove(index: number): void {
-    this.items.splice(index, 1);
+  remove(item: T): void {
+    const i = this.items.indexOf(item);
+    if (i !== -1) this.items.splice(i, 1);
   }
-
-  update(index: number, item: T): void {
-    this.items[index] = item;
+  update(oldItem: T, newItem: T): void {
+    const i = this.items.indexOf(oldItem);
+    if (i !== -1) this.items[i] = newItem;
   }
 
   getAll(): T[] {

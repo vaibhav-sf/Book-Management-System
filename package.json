@@ -1,11 +1,12 @@
 {
   "name": "bms",
+  "type": "module",
   "version": "1.0.0",
   "description": "A simple web-based application for managing book records.",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc --watch",
+    "dev": "tsc --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

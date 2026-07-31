@@ -1,23 +1,16 @@
-export type GenreType = 
-  | "Religious"
-  | "Action"
-  | "Adventure"
-  | "Comedy"
-  | "Historical"
-  | "Mystery"
-  | "Romance"
-  | "Thriller";
+// 🟢 Replace lines 1-20 in src/types/BookTypes.ts with:
+export const GENRES = [
+  "Religious",
+  "Historical",
+  "Action",
+  "Adventure",
+  "Comedy",
+  "Mystery",
+  "Romance",
+  "Thriller",
+] as const;
 
-export const genreMapping: Record<GenreType, string> = {
-  Religious: "Religious",
-  Historical: "Historical",
-  Action: "Action",
-  Adventure: "Adventure",
-  Comedy: "Comedy",
-  Mystery: "Mystery",
-  Romance: "Romance",
-  Thriller: "Thriller",
-};
+export type GenreType = typeof GENRES[number];
 
 export interface ApiPost {
   userId: number;
