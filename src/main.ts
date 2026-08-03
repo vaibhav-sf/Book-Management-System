@@ -33,7 +33,6 @@ if (form) {
 
   form.addEventListener("submit", async (e: Event) => {
     e.preventDefault();
-
     const title = DOMHelper.getValue("title");
     const author = DOMHelper.getValue("author");
     const isbn = DOMHelper.getValue("isbn");
@@ -42,20 +41,60 @@ if (form) {
 
     DOMHelper.clearErrors();
 
-    const errors = BookValidator.validate(title, author, isbn, publicationDate, genre);
+    const errors = BookValidator.validate(
+      title,
+      author,
+      isbn,
+      publicationDate,
+      genre
+    );
 
     if (Object.keys(errors).length > 0) {
-      if (errors.title) DOMHelper.showError("title", errors.title);
-      if (errors.author) DOMHelper.showError("author", errors.author);
-      if (errors.isbn) DOMHelper.showError("isbn", errors.isbn);
-      if (errors.publicationDate) DOMHelper.showError("publicationDate", errors.publicationDate);
-      if (errors.genre) DOMHelper.showError("genre", errors.genre);
+
+      if (errors.title)
+        DOMHelper.showError(
+          "title",
+          "titleError",
+          errors.title
+        );
+
+      if (errors.author)
+        DOMHelper.showError(
+          "author",
+          "authorError",
+          errors.author
+        );
+
+      if (errors.isbn)
+        DOMHelper.showError(
+          "isbn",
+          "isbnError",
+          errors.isbn
+        );
+
+      if (errors.publicationDate)
+        DOMHelper.showError(
+          "publicationDate",
+          "publicationDateError",
+          errors.publicationDate
+        );
+
+      if (errors.genre)
+        DOMHelper.showError(
+          "genre",
+
+          errors.genre
+        );
       return;
     }
 
     if (manager.isEditing()) {
       if (manager.findBook(title, author, manager.getEditIndex())) {
-        DOMHelper.showError("title", "Book already exists");
+        DOMHelper.showError("title", "titleError", "Book already exists");
+        return;
+      }
+      if (manager.bookExists(isbn, manager.getEditIndex())) {
+        DOMHelper.showError("isbn", "isbnError", "Book with this ISBN already exists");
         return;
       }
       try {
@@ -65,12 +104,12 @@ if (form) {
         const updatedBook = isEBook
           ? BookFactory.createApiBook(title, author, isbn, publicationDate, genre, existingBook.price)
           : BookFactory.createManualBook(title, author, isbn, publicationDate, genre, existingBook.price);
-
         manager.updateBook(manager.getEditIndex(), updatedBook);
+
         DOMHelper.showSuccess("Book updated successfully!");
         manager.clearEditIndex();
       } catch (error) {
-        console.error("Error updating book:", error);
+        DOMHelper.showToastError("Failed to update book. Please try again.");
       }
     } else {
       if (manager.findBook(title, author, manager.getEditIndex())) {
@@ -78,7 +117,7 @@ if (form) {
         return;
       }
       if (manager.bookExists(isbn)) {
-        DOMHelper.showError("isbn", "Book already exists");
+        DOMHelper.showError("isbn", "isbnError", "Book already exists");
         return;
       }
       try {
@@ -86,7 +125,7 @@ if (form) {
         const book = BookFactory.createManualBook(title, author, isbn, publicationDate, genre);
         const added = manager.addBook(book);
         if (!added) {
-          DOMHelper.showError("isbn", "Book already exists");
+          DOMHelper.showError("isbn", "isbnError", "Book already exists");
           return;
         }
         DOMHelper.showSuccess("Book added successfully!");
@@ -100,7 +139,6 @@ if (form) {
     DOMHelper.clearErrors();
   });
 }
-
 
 document.getElementById("fetchBooksBtn")?.addEventListener("click", () =>
   manager.applyFilters());

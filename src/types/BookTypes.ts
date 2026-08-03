@@ -1,4 +1,3 @@
-// 🟢 Replace lines 1-20 in src/types/BookTypes.ts with:
 export const GENRES = [
   "Religious",
   "Historical",

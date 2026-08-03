@@ -27,7 +27,7 @@ export class BookManager {
   deleteBook(index: number): void {
     if (confirm("Delete this book?")) {
       const book = this.repository.get(index);
-      if(book) this.repository.remove(book);
+      if (book) this.repository.remove(book);
       this.clearEditIndex();
       this.refresh();
     }
@@ -48,7 +48,6 @@ export class BookManager {
 
   @LogExecution
   applyFilters(): void {
-
     const searchInput = document.getElementById("searchBook") as HTMLInputElement;
     const genreFilter = document.getElementById("genreFilter") as HTMLSelectElement;
     const sortBooks = document.getElementById("sortBooks") as HTMLSelectElement;
@@ -75,7 +74,6 @@ export class BookManager {
     );
   }
 
-
   addBook(book: IBook): boolean {
     if (this.bookExists(book.isbn)) {
       return false;
@@ -99,9 +97,9 @@ export class BookManager {
     );
   }
 
-  bookExists(isbn: string): boolean {
+  bookExists(isbn: string, ignoreIndex: number = -1): boolean {
     return this.repository.getAll().some(
-      (book) => book.isbn === isbn
+      (book, index) => index !== ignoreIndex && book.isbn === isbn
     );
   }
 

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dependencies
 node_modules/
 
@@ -12,3 +13,18 @@ Thumbs.db
 
 # DOCUMENT
 DOCUMENTATION.md
+=======
+# Dependencies
+node_modules/
+# Build output
+frontend/dist/
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation
+DOCUMENTATION.md
+>>>>>>> 1bab880 (Refactor repository and update book management)
