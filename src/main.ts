@@ -8,6 +8,8 @@ import { Repository } from "./generics/Repository.js";
 import { BaseBook } from "./models/BaseBook.js";
 import { BookRenderer } from "./renderers/BookRenderer.js";
 import { FilterService } from "./services/FilterService.js";
+import { ISearchFilter } from "./interfaces/ISearchFilter.js";
+
 
 const repository = new Repository<BaseBook>();
 const renderer = new BookRenderer();
@@ -19,7 +21,14 @@ const manager = new BookManager(
   filterService,
   validator
 );
-manager.applyFilters();
+
+const readFiltersFromDOM = (): ISearchFilter => ({
+  keyword: (document.getElementById("searchBook") as HTMLInputElement)?.value.trim() ?? "",
+  genre: (document.getElementById("genreFilter") as HTMLSelectElement)?.value ?? "",
+  sort: (document.getElementById("sortBooks") as HTMLSelectElement)?.value ?? ""
+});
+const refreshFilters = () => manager.applyFilters(readFiltersFromDOM());
+refreshFilters();
 
 const serverRequest = (): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -41,7 +50,7 @@ if (form) {
 
     DOMHelper.clearErrors();
 
-    const errors = BookValidator.validate(
+    const errors = manager.validateBook(
       title,
       author,
       isbn,
@@ -54,35 +63,30 @@ if (form) {
       if (errors.title)
         DOMHelper.showError(
           "title",
-          "titleError",
           errors.title
         );
 
       if (errors.author)
         DOMHelper.showError(
           "author",
-          "authorError",
           errors.author
         );
 
       if (errors.isbn)
         DOMHelper.showError(
           "isbn",
-          "isbnError",
           errors.isbn
         );
 
       if (errors.publicationDate)
         DOMHelper.showError(
           "publicationDate",
-          "publicationDateError",
           errors.publicationDate
         );
 
       if (errors.genre)
         DOMHelper.showError(
           "genre",
-
           errors.genre
         );
       return;
@@ -90,64 +94,65 @@ if (form) {
 
     if (manager.isEditing()) {
       if (manager.findBook(title, author, manager.getEditIndex())) {
-        DOMHelper.showError("title", "titleError", "Book already exists");
+        DOMHelper.showError("title", "Book already exists");
         return;
       }
       if (manager.bookExists(isbn, manager.getEditIndex())) {
-        DOMHelper.showError("isbn", "isbnError", "Book with this ISBN already exists");
+        DOMHelper.showError("isbn", "Book with this ISBN already exists");
         return;
       }
       try {
         await serverRequest();
         const existingBook = manager.getBook(manager.getEditIndex());
+        if (!existingBook) {
+          DOMHelper.showToastError("Book not found for update.");
+          return;
+        }
         const isEBook = existingBook.getSource() === "API";
         const updatedBook = isEBook
           ? BookFactory.createApiBook(title, author, isbn, publicationDate, genre, existingBook.price)
           : BookFactory.createManualBook(title, author, isbn, publicationDate, genre, existingBook.price);
-        manager.updateBook(manager.getEditIndex(), updatedBook);
-
+        manager.updateBook(manager.getEditIndex(), updatedBook, readFiltersFromDOM());
         DOMHelper.showSuccess("Book updated successfully!");
+        form.reset();
         manager.clearEditIndex();
+        if (submitBtn) submitBtn.textContent = "Register Book";
+        DOMHelper.clearErrors();
+
       } catch (error) {
         DOMHelper.showToastError("Failed to update book. Please try again.");
+        return;
       }
     } else {
       if (manager.findBook(title, author, manager.getEditIndex())) {
         DOMHelper.showError("title", "Book already exists");
         return;
       }
-      if (manager.bookExists(isbn)) {
-        DOMHelper.showError("isbn", "isbnError", "Book already exists");
-        return;
-      }
+
       try {
         await serverRequest();
         const book = BookFactory.createManualBook(title, author, isbn, publicationDate, genre);
         const added = manager.addBook(book);
         if (!added) {
-          DOMHelper.showError("isbn", "isbnError", "Book already exists");
+          DOMHelper.showError("isbn", "Book already exists");
           return;
         }
         DOMHelper.showSuccess("Book added successfully!");
+        form.reset();
+        if (submitBtn) submitBtn.textContent = "Register Book";
+        DOMHelper.clearErrors();
       } catch (error) {
         DOMHelper.showToastError("Failed to save book. Please try again.");
+        return;
       }
     }
-
-    form.reset();
-    if (submitBtn) submitBtn.textContent = "Register Book";
-    DOMHelper.clearErrors();
   });
 }
 
-document.getElementById("fetchBooksBtn")?.addEventListener("click", () =>
-  manager.applyFilters());
-document.getElementById("genreFilter")?.addEventListener("change", () =>
-  manager.applyFilters());
-document.getElementById("sortBooks")?.addEventListener("change", () =>
-  manager.applyFilters());
-document.getElementById("searchBook")?.addEventListener("input", () =>
-  manager.applyFilters());
+document.getElementById("fetchBooksBtn")?.addEventListener("click", refreshFilters);
+document.getElementById("genreFilter")?.addEventListener("change", refreshFilters);
+document.getElementById("sortBooks")?.addEventListener("change", refreshFilters);
+document.getElementById("searchBook")?.addEventListener("input", refreshFilters);
 
 const renderApiBook = (book: ApiPost): void => {
   const apiResultList = document.getElementById("apiResultList");
@@ -228,7 +233,7 @@ const fetchSingleBook = async (): Promise<void> => {
 document.getElementById("fetchApiBooks")?.addEventListener("click", fetchSingleBook);
 
 function getRandomGenre(): string {
-  return GENRES[Math.floor(Math.random() * GENRES.length)];
+  return GENRES[Math.floor(Math.random() * GENRES.length)] ?? "Other";
 }
 
 const authorsList: string[] = [
@@ -243,7 +248,7 @@ const authorsList: string[] = [
 ];
 
 function getRandomAuthor(): string {
-  return authorsList[Math.floor(Math.random() * authorsList.length)];
+  return authorsList[Math.floor(Math.random() * authorsList.length)] ?? "John Smith";
 }
 
 function getRandomDate(): string {

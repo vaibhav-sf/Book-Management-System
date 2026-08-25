@@ -1,4 +1,16 @@
-export class BookValidator {
+import { IValidator } from "../interfaces/IValidator.js";
+
+export class BookValidator implements IValidator {
+    validate(
+        title: string,
+        author: string,
+        isbn: string,
+        publicationDate: string,
+        genre: string
+    ): Record<string, string> {
+        return BookValidator.validate(title, author, isbn, publicationDate, genre);
+    }
+
     static validate(
         title: string,
         author: string,
@@ -17,14 +29,8 @@ export class BookValidator {
         }
         if (!isbn.trim()) {
             errors.isbn = "ISBN is required";
-        } else {
-            if (isbn.length !== 10) {
-                errors.isbn = "ISBN must be 10 digits long";
-            }
-            if (isNaN(Number(isbn))) {
-                errors.isbn = "ISBN must be a number";
-            }
-            
+        } else if (!/^\d{10}$/.test(isbn.trim())) {
+            errors.isbn = "ISBN must be a number and exactly 10 digits";
         }
         if (!publicationDate) {
             errors.publicationDate = "Publication Date is required";

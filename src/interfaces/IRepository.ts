@@ -3,6 +3,6 @@ export interface IRepository<T> {
     remove(item: T): void;
     update(oldItem: T, newItem: T): void;
     getAll(): T[];
-    get(index: number): T;
+    get(index: number): T | undefined;
     count(): number;
 }

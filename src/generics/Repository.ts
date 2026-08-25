@@ -19,7 +19,7 @@ export class Repository<T> implements IRepository<T> {
     return [...this.items];
   }
 
-  get(index: number): T {
+  get(index: number): T | undefined {
     return this.items[index];
   }
 

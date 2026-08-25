@@ -126,11 +126,12 @@ PrintedBook and EBook extend BaseBook and can be used wherever a book object is 
 
 The project uses focused interfaces such as:
 
-- IBook
-- IAuthor
-- ICategory
-- IDashboard
-- ISearchFilter
+- `IBook`
+- `IRepository<T>`
+- `IBookRenderer`
+- `IFilterService`
+- `IValidator`
+- `ISearchFilter`
 
 Each interface represents a specific contract within the application.
 

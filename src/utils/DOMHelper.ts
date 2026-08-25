@@ -4,12 +4,10 @@ export class DOMHelper {
     return el instanceof HTMLInputElement || el instanceof HTMLSelectElement ? el.value.trim() : "";
   }
 
-  static showError(inputId: string, errorIdOrMessage: string, message?: string): void {
-    const messageText = message !== undefined ? message : errorIdOrMessage;
-    const errorId = message !== undefined ? errorIdOrMessage : inputId + "Error";
-    const errorEl = document.getElementById(errorId);
+  static showError(inputId: string, message: string): void {
+    const errorEl = document.getElementById(`${inputId}Error`);
     const inputEl = document.getElementById(inputId);
-    if (errorEl) errorEl.textContent = messageText;
+    if (errorEl) errorEl.textContent = message;
     if (inputEl) inputEl.classList.add("border-red-500", "ring-2", "ring-red-500");
   }
 

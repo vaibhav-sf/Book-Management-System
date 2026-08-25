@@ -1,40 +1,42 @@
 import { IBook } from "../interfaces/IBook.js";
 import { LogExecution } from "../decorators/Logger.js";
 import { DashboardRenderer } from "../utils/DashboardRenderer.js";
-import { BookRenderer } from "../renderers/BookRenderer.js";
-import { FilterService } from "../services/FilterService.js";
-import { BookValidator } from "../validators/BookValidator.js";
+import { IBookRenderer } from "../interfaces/IBookRenderer.js";
+import { IFilterService } from "../interfaces/IFilterService.js";
+import { IValidator } from "../interfaces/IValidator.js";
 import { IRepository } from "../interfaces/IRepository.js";
+import { ISearchFilter } from "../interfaces/ISearchFilter.js";
 
 export class BookManager {
   private displayedBooks: IBook[] = [];
   private editIndex: number = -1;
   constructor(
     private repository: IRepository<IBook>,
-    private renderer: BookRenderer,
-    private filterService: FilterService,
-    _validator: BookValidator
+    private renderer: IBookRenderer,
+    private filterService: IFilterService,
+    private validator: IValidator
   ) { }
 
   updateDashboard(): void {
     DashboardRenderer.update(this.repository.getAll());
   }
-  private refresh(): void {
+  private refresh(filter?: ISearchFilter): void {
     this.updateDashboard();
-    this.applyFilters();
+    this.applyFilters(filter ?? { keyword: "", genre: "", sort: "" });
   }
 
-  deleteBook(index: number): void {
+  deleteBook(index: number, filter: ISearchFilter): void {
     if (confirm("Delete this book?")) {
       const book = this.repository.get(index);
       if (book) this.repository.remove(book);
       this.clearEditIndex();
-      this.refresh();
+      this.refresh(filter);
     }
   }
 
   editBook(index: number): void {
     const book = this.repository.get(index);
+    if (!book) return;
     (document.getElementById("title") as HTMLInputElement).value = book.title;
     (document.getElementById("author") as HTMLInputElement).value = book.author;
     (document.getElementById("isbn") as HTMLInputElement).value = book.isbn;
@@ -45,24 +47,28 @@ export class BookManager {
     const submitBtn = document.querySelector("#bookForm button[type='submit']") as HTMLButtonElement;
     if (submitBtn) submitBtn.textContent = "Update Book";
   }
+  validateBook(
+    title: string,
+    author: string,
+    isbn: string,
+    publicationDate: string,
+    genre: string
+  ): Record<string, string> {
+    return this.validator.validate(title, author, isbn, publicationDate, genre);
+  }
 
   @LogExecution
-  applyFilters(): void {
-    const searchInput = document.getElementById("searchBook") as HTMLInputElement;
-    const genreFilter = document.getElementById("genreFilter") as HTMLSelectElement;
-    const sortBooks = document.getElementById("sortBooks") as HTMLSelectElement;
-    const keyword = searchInput?.value.trim() ?? "";
-    const genre = genreFilter?.value ?? "";
-    const sort = sortBooks?.value ?? "";
+  applyFilters(filter: ISearchFilter = { keyword: "", genre: "", sort: "" }): void {
     this.displayedBooks = this.filterService.filterBooks(
       this.repository.getAll(),
-      keyword, genre, sort);
+      filter.keyword, filter.genre, filter.sort
+    );
     this.renderer.render(
       this.displayedBooks,
       (book) => {
         const index = this.repository.getAll().indexOf(book);
         if (index !== -1) {
-          this.deleteBook(index);
+          this.deleteBook(index, filter);
         }
       },
       (book) => {
@@ -74,19 +80,19 @@ export class BookManager {
     );
   }
 
-  addBook(book: IBook): boolean {
+  addBook(book: IBook, filter?: ISearchFilter): boolean {
     if (this.bookExists(book.isbn)) {
       return false;
     }
     this.repository.add(book);
-    this.refresh();
+    this.refresh(filter);
     return true;
   }
 
-  updateBook(index: number, updatedBook: IBook): void {
+  updateBook(index: number, updatedBook: IBook, filter?: ISearchFilter): void {
     const oldBook = this.repository.get(index);
     if (oldBook) this.repository.update(oldBook, updatedBook);
-    this.refresh();
+    this.refresh(filter);
   }
 
   findBook(title: string, author: string, ignoreIndex: number = -1): boolean {
@@ -125,7 +131,7 @@ export class BookManager {
     this.editIndex = -1;
   }
 
-  getBook(index: number): IBook {
+  getBook(index: number): IBook | undefined {
     return this.repository.get(index);
   }
 }

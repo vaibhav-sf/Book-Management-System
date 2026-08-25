@@ -2,10 +2,11 @@ import { IBook } from "../interfaces/IBook.js";
 
 export class FilterService {
   filterBooks(books: IBook[], keyword: string, genre: string, sort: string): IBook[] {
+    const needle = keyword.trim().toLowerCase();
     let filtered = [...books];
-    if (keyword !== "") {
+    if (needle !== "") {
       filtered = filtered.filter((book) =>
-        book.title.toLowerCase().includes(keyword),
+        book.title.toLowerCase().includes(needle),
       );
     }
     if (genre !== "") {
